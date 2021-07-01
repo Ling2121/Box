@@ -12,7 +12,7 @@
 
 ## World
 
-​	world存放于 "source/ecs/world" 文件夹中，要创建一个世界需要在"source/ecs/world"文件夹或者其子目录创建一个"WorldConstructor"(世界构造器),可以通过**core.WorldConstructor(name,constructor)**函数创建。
+​	world存放于 "source/ecs/world" 文件夹中，要创建一个世界需要在"source/ecs/world"文件夹或者其子目录创建一个"WorldConstructor"(世界构造器),可以通过 **core.WorldConstructor(name,constructor)** 函数创建。
 
 ```lua
 --TestWorld.lua
