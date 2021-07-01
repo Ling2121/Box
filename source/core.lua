@@ -13,6 +13,7 @@ local tiny = require"library/tiny-ecs/tiny"
 local ComponentConstructor = require"source/ecs/component_constructor"
 local EntityConstructor = require"source/ecs/entity_constructor"
 local SystemConstructor = require"source/ecs/system_constructor"
+local WorldConstructor = require"source/ecs/world_constructor"
 local Utilities = require"source/utilities"
 
 core = {
@@ -43,6 +44,7 @@ core = {
     ComponentConstructor = ComponentConstructor,
     EntityConstructor = EntityConstructor,
     SystemConstructor = SystemConstructor,
+    WorldConstructor = WorldConstructor,
 }
 
 function core:init()
@@ -138,25 +140,33 @@ function core:getSystemConstructor(name)
     return self.system_constructors[name]
 end
 
-function core:addWorld(name,world_or_path)
-    local world = world_or_path
-    if type(world) == "string" then
-        world = require(world)()
+function core:loadWorld(path,...)
+    local world_constructor = require(path)
+    local world_struct = world_constructor.make(...)
+    world_struct._world_name = world_constructor.name 
+    return world_struct
+end
+
+function core:addWorld(worldStruct_or_path)
+    local world_struct = worldStruct_or_path
+    if type(world_struct) == "string" then
+        world_struct = self:loadWorld(world_struct)
     end
     local tiny_world = tiny.world()
-    if world.systems then
-        for i,system in ipairs(world.systems) do
+    if world_struct.systems then
+        for i,system in ipairs(world_struct.systems) do
             tiny_world:addSystem(system);
         end
     end
-    if world.entities then
-        for i,entity in ipairs(world.entities) do
+    if world_struct.entities then
+        for i,entity in ipairs(world_struct.entities) do
             tiny_world:addEntity(entity);
         end
     end
-    tiny_world._enterUpdate__ = world.enterUpdate
-    tiny_world._exitUpdate__ = world.exitUpdate
-    self.worlds[name] = tiny_world;
+    tiny_world._enterUpdate__ = world_struct.enterUpdate
+    tiny_world._exitUpdate__ = world_struct.exitUpdate
+    self.worlds[world_struct._world_name] = tiny_world
+    return tiny_world
 end
 
 function core:makeWorldToLove(world)
@@ -170,8 +180,11 @@ function core:makeWorldToLove(world)
     end
 end
 
-function core:switchWorld(name)
-    local world = self.worlds[name]
+function core:switchWorld(name_or_world)
+    local world = name_or_world
+    if type(world) == "string" then
+        world = self.worlds[name_or_world]
+    end
     if not world then return false end
     if self.world then
         self.world:_exitUpdate__()

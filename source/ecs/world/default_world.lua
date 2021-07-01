@@ -1,7 +1,4 @@
---[[
-    返回的世界是System以及Entity的集合
---]]
-return function()
+return core.WorldConstructor("DefaultWorld",function(...)
     return {
         systems = {
             core:createSystem("BoxDebugDrawSystem"),
@@ -14,4 +11,4 @@ return function()
         enterUpdate = function(self)end,
         exitUpdate = function(self)end,
     }
-end
+end)
