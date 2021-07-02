@@ -153,9 +153,13 @@ function core:addWorld(worldStruct_or_path)
         world_struct = self:loadWorld(world_struct)
     end
     local tiny_world = tiny.world()
+    tiny_world._init_systems = {}
     if world_struct.systems then
         for i,system in ipairs(world_struct.systems) do
             tiny_world:addSystem(system);
+            if system.system_type == "init" then
+                table.insert(tiny_world._init_systems,system)
+            end
         end
     end
     if world_struct.entities then
@@ -174,8 +178,14 @@ function core:makeWorldToLove(world)
         local filter_fn = function(w,s)
             return s[callback_name] ~= nil
         end
-        love[callback_name] = function(...)
-            world:update(filter_fn,callback_name,...)
+        if callback_name == "update" then
+            love["update"] = function(...)
+                world:update(filter_fn,"process",...)
+            end
+        else
+            love[callback_name] = function(...)
+                world:update(filter_fn,callback_name,...)
+            end
         end
     end
 end
@@ -191,6 +201,15 @@ function core:switchWorld(name_or_world)
     end
     self.world = world;
     world:_enterUpdate__()
+
+    for i,init_system in ipairs(world._init_systems) do
+        for i,entity in ipairs(world.entitiesToChange) do
+            if not init_system.filter(init_system,entity) then
+                init_system:init(entity)
+            end
+        end
+    end
+    world._init_systems = {}
 
     self:makeWorldToLove(world);
     return true
@@ -216,7 +235,7 @@ function core:getModule(name)
 end
 
 function core:hasModule(name)
-    return self.modules[name] == nil
+    return self.modules[name] ~= nil
 end
 
 return core:init()

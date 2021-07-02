@@ -300,7 +300,7 @@ end
 -- Update function for all Processing Systems.
 local function processingSystemUpdate(system,callback_name, ...)
     local preProcess = system.preProcess
-    local process = system[callback_name or "process"]
+    local process = system[callback_name]
     local postProcess = system.postProcess
 
     if preProcess then
